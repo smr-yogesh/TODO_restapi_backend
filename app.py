@@ -82,7 +82,6 @@ def signin():
 
         user = User.query.filter_by(email=email).first()
         if check_password_hash(user.pswd, password):
-            #return jsonify({'token':"logged in"})
             token = jwt.encode({'user': email, 'exp' : datetime.utcnow() + timedelta(minutes= 5)}, app.config["SECRET_KEY"], algorithm='HS256')
             return jsonify({'token':token.encode().decode('utf-8')})
         else :
