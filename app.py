@@ -53,26 +53,27 @@ class Todo(db.Model):
     updated = db.Column(db.DateTime(), default = datetime.utcnow)
     status = db.Column(db.Enum("NotStarted","OnGoing","Completed", name="status"), default = "NotStarted")
 
-    def __init__(self,name,description,uid, created, updated,status):
+    def __init__(self,name,description,uid, updated,status):
        self.name = name
        self.description = description
        self.user_id = uid
-       self.created = created
        self.updated = updated
        self.status = status
-
-
+app.app_context().push()
+db.create_all()
+#signup
 @app.route('/api/v1/signup', methods = ['POST'])
 def signup():
     data = request.get_json()
     email = data["email"]
     pswd = data["password"]
-    update_time = data["update_time"]
-    user = User(email,pswd,update_time)
+    updated = datetime.utcnow()
+    user = User(email,pswd,updated)
     db.session.add(user)
     db.session.commit()
     return data
 
+#signin
 @app.route('/api/v1/sigin', methods = ['POST'])
 def signin():
     if request.method == 'POST':
@@ -82,50 +83,94 @@ def signin():
 
         user = User.query.filter_by(email=email).first()
         if check_password_hash(user.pswd, password):
-            token = jwt.encode({'user': email, 'exp' : datetime.utcnow() + timedelta(minutes= 5)}, app.config["SECRET_KEY"], algorithm='HS256')
+            token = jwt.encode({'user': email, 'exp' : datetime.utcnow() + timedelta(minutes= 30)}, app.config["SECRET_KEY"], algorithm='HS256')
             return jsonify({'token':token.encode().decode('utf-8')})
         else :
             return jsonify({'message':'Invalid password'})
 
-@app.route('/api/v1/changePassword', methods = ['PUT','GET'])
+#Change user passwords
+@app.route('/api/v1/changePassword', methods = ['PUT'])
 @token_required
 def changepassword(user):
+    updated = datetime.utcnow()
     email = user.email
     newpass = generate_password_hash(request.get_json()['password'])
     if newpass:
-        User.query.filter_by(email = email).update(dict(pswd=newpass))
+        User.query.filter_by(email = email).update(dict(pswd=newpass, updated = updated))
         db.session.commit()
         return jsonify ({'message': 'Password changed successfully!!'})
     
 
-
-@app.route('/api/v1/todos?status=', methods = ['GET'])
+#get todos
+@app.route('/api/v1/todos', methods = ['GET'])
 @token_required
-def todos_s():
-    allusers= Todo.query.all()
+def todos_s(user):
+    uid = user.id
+    status = request.args.get('status')
+    todos= Todo.query.filter_by(status=status, user_id = uid)
     output = []
-    for result in allusers:
-        nowuser = {}
-        nowuser['id'] = result.id
-        nowuser['email'] = result.email
-        nowuser['created'] = result.created
-        output.append(nowuser)
+    for result in todos:
+        todo = {}
+        todo['name'] = result.name
+        todo['description'] = result.description
+        todo['status'] = result.status
+        todo['created'] = result.created
+        todo['updated'] = result.updated
+        output.append(todo)
     return jsonify(output)
 
-@app.route('/api/v1/todos', methods = ['POST','GET'])
+#create todo
+@app.route('/api/v1/todos', methods = ['POST'])
 @token_required
-def createTodo():
-    return
+def createTodo(user):
+    data = request.get_json()
+    name = data['name']
+    desc = data['description']
+    uid = user.id
+    updated = datetime.utcnow()
+    status = "NotStarted"
+    todo = Todo(name=name,description=desc,uid=uid,updated=updated,status=status)
+    db.session.add(todo)
+    db.session.commit()
 
-@app.route('/api/v1/todos/:id', methods = ['PUT'])
-@token_required
-def updateTodo():
-    return
 
-@app.route('/api/v1/todos/:id', methods = ['DELETE'])
+@app.route('/api/v1/todos/<id>', methods = ['PUT'])
 @token_required
-def delTodo():
-    return
+def updateTodo(user,id):
+    data = request.get_json()
+    uid = user.id
+    todo_id = id
+    old_data = Todo.query.filter_by(id=todo_id, user_id = uid).first()
+    name = data['name']
+    desc = data['description']
+    status = data['status']
+    updated = datetime.utcnow()
+    try :
+        if name == '': name = old_data.name
+        if desc == '': desc = old_data.description
+        if status == '' : status = old_data.status
+        Todo.query.filter_by(id=todo_id, user_id = uid).update(dict(name=name,description=desc,updated=updated,status=status))
+        db.session.commit()
+    except :
+        return jsonify ({'message':'Not allowed'}),403  
+
+    return jsonify ({'message':'Todo edited sucessfully'})
+
+@app.route('/api/v1/todos/<id>', methods = ['DELETE'])
+@token_required
+def delTodo(user,id):
+    uid = user.id
+    todo_id = int(id)
+    todos = Todo.query.filter_by(user_id = uid)
+    ids = []
+    for each in todos:
+        ids.append(each.id)
+    if todo_id in ids:
+        Todo.query.filter_by(id=todo_id).delete()
+        db.session.commit()
+        return jsonify ({'message':'Todo deleted sucessfully'})
+    else:
+        return jsonify ({'message':'Not allowed'}),403  
 
 if __name__ == '__main__':
     app.run(debug=True)
