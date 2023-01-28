@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
-#from flask_login import login_user, login_required, logout_user, current_user
 import jwt 
 from functools import wraps
 
@@ -14,16 +13,17 @@ db=SQLAlchemy(app)
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.get_json('token')
+        token = request.args.get('token')
         if not token:
-            return jsonify ({'message':'Token is required!'}), 403
-        
+            return jsonify ({'message':'Token is required!'}), 401
+
         try:
-            data = jwt.decode(token, app.config["SECRET_KEY"])
+            data = jwt.decode(token, app.config["SECRET_KEY"],algorithms='HS256')
+            user = User.query.filter_by(email=data['user']).first()
         except:
-            return jsonify({'message':'Invalid token'}), 403
-        
-        return f(*args, **kwargs)
+            return jsonify({'message':'Invalid token'}), 401
+        return f(user,*args, **kwargs)
+    return decorated
 #Model
 class User(db.Model):
     __tablename__ = 'user'
@@ -83,13 +83,21 @@ def signin():
         user = User.query.filter_by(email=email).first()
         if check_password_hash(user.pswd, password):
             #return jsonify({'token':"logged in"})
-            token = jwt.encode({'user': email, 'exp' : datetime.utcnow() + timedelta(minutes = 30)}, app.config["SECRET_KEY"])
-            return jsonify({'token':token.encode().decode('UTF-8')})
+            token = jwt.encode({'user': email, 'exp' : datetime.utcnow() + timedelta(minutes= 5)}, app.config["SECRET_KEY"], algorithm='HS256')
+            return jsonify({'token':token.encode().decode('utf-8')})
+        else :
+            return jsonify({'message':'Invalid password'})
 
-@app.route('/api/v1/changePassword', methods = ['PUT'])
+@app.route('/api/v1/changePassword', methods = ['PUT','GET'])
 @token_required
-def changepassword():
-    return
+def changepassword(user):
+    email = user.email
+    newpass = generate_password_hash(request.get_json()['password'])
+    if newpass:
+        User.query.filter_by(email = email).update(dict(pswd=newpass))
+        db.session.commit()
+        return jsonify ({'message': 'Password changed successfully!!'})
+    
 
 
 @app.route('/api/v1/todos?status=', methods = ['GET'])
@@ -119,12 +127,6 @@ def updateTodo():
 @token_required
 def delTodo():
     return
-
-@app.route('/api/v1/users', methods = ['GET'])
-@token_required
-def users():
-    return
-
 
 if __name__ == '__main__':
     app.run(debug=True)

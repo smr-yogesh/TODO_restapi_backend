@@ -1,6 +1,3 @@
 Flask
 SQLAlchemy
-psycopg2
-passlib
-flask_login
 PyJWT
