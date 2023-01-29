@@ -35,7 +35,7 @@ def createTodo(user):
     todo = Todo(name=name,description=desc,uid=uid,updated=updated,status=status)
     db.session.add(todo)
     db.session.commit()
-
+    return jsonify({'message':'Todo added'})
 
 @B_todo.route('/api/v1/todos/<id>', methods = ['PUT'])
 @token_required
