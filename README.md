@@ -9,6 +9,8 @@ Create your own todo app with this backend
 pip install -r requirements
 ```
 
+Application needs PostgreSQL as Database, please setup it before hand and config auth info in routes/__init.py file.
+
 ## Usage
 
 The application takes data in JSON format.
