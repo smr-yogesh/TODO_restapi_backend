@@ -7,7 +7,8 @@ from model.users import User
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.args.get('token')
+        token = request.headers['x-access-token']
+        #token = request.args.get('token')  to pass via url
         if not token:
             return jsonify ({'message':'Token is required!'}), 401
 
