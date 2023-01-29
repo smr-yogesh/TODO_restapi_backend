@@ -1,0 +1,24 @@
+volumes:
+  todos-vol:
+
+services:
+  
+  python:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - pgsql
+    ports:
+      - 5001:5000
+    volumes:
+      - . :/usr/src/app
+
+  pgsql:
+    image: postgres:12.11
+    environment:
+      POSTGRES_PASSWORD: password # Cred exposed for test purposes
+      POSTGRES_USER: postgres # Cred exposed for test purposes
+      POSTGRES_DB: tododb
+      POSTGRES_HOST: localhost
+      DATABASE_PORT: 5432
