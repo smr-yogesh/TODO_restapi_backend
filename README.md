@@ -2,16 +2,34 @@
 
 Create your own todo app with this backend 
 
-## Required package Installation 
+## Normal run
 
 
 ```bash
+#Setup environment
 pip install -r requirements
+#run app
+python app.py
 ```
 
 Application needs PostgreSQL as Database, please setup it before hand and config auth info in routes/__init.py file.
 
-## Usage
+## Deploy in docker
+Want to deploy in docker? I got you.
+
+```bash
+docker-compose up --build
+```
+Once build successful, exit with ctrl+c. wait to exit with ease.
+
+Run image in detached mode.
+
+```bash
+docker-compose up -d
+```
+Remember application is exposed at port 5001 from docker.
+
+## Normal run
 
 The application takes data in JSON format.
 
