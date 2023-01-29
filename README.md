@@ -29,7 +29,7 @@ docker-compose up -d
 ```
 Remember application is exposed at port 5001 from docker.
 
-## Normal run
+## Helpful information
 
 The application takes data in JSON format.
 
