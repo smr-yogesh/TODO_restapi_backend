@@ -1,6 +1,6 @@
 # TODO Restapi Backend
 
-Foobar is a Python library for dealing with word pluralization.
+Create your own todo app with this backend 
 
 ## Required package Installation 
 
