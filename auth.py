@@ -11,7 +11,6 @@ def token_required(f):
         #token = request.args.get('token')  to pass via url
         if not token:
             return jsonify ({'message':'Token is required!'}), 401
-
         try:
             data = jwt.decode(token, app.config["SECRET_KEY"],algorithms='HS256')
             user = User.query.filter_by(email=data['user']).first()
