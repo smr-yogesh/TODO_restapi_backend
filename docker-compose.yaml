@@ -4,28 +4,21 @@ volumes:
 services:
   
   python:
-    # we are not going to use the Python image as is but rather tweak one to our needs
     build: 
       context: .
       dockerfile: Dockerfile
     depends_on:
       - pgsql
-    # using port 80 for convenience so we can access localhost directly without specifying the port
     ports:
-      - 5000:5000
-    # the Flask app' code will go into the `app` folder of your project and be mapped to `/usr/src/app` in the container
+      - 5001:5000
     volumes:
       - . :/usr/src/app
 
   pgsql:
     image: postgres:12.11
     environment:
-      POSTGRES_PASSWORD: password # environment variable that sets the superuser password for PostgreSQL
-      POSTGRES_USER: postgres # variable that will create the specified user with superuser power and a database with the same name
+      POSTGRES_PASSWORD: password # Cred exposed for test purposes
+      POSTGRES_USER: postgres # Cred exposed for test purposes
       POSTGRES_DB: tododb
       POSTGRES_HOST: localhost
       DATABASE_PORT: 5432
-    #volumes:
-      #- test-vol:/var/lib/postgresql/data
-    #ports:
-      #- 5432:5432
